@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LayoutDashboard, ShoppingCart, Package, Users, Bot, LogOut, Menu, X } from "lucide-react";
-import Themetoggle from "./Themetoggle";
+import ThemeToggle from "./ThemeToggle";
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -59,7 +59,7 @@ export default function Layout() {
             <LogOut size={16} /> Log out
           </button>
 
-          <Themetoggle className="flex h-10 w-10 items-center justify-center rounded-md text-slate-300 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400" />
+          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-md text-slate-300 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400" />
         </div>
       </div>
     </div>
@@ -91,7 +91,7 @@ export default function Layout() {
 
           <span className="font-semibold">BizPilot</span>
 
-          <Themetoggle />
+          <ThemeToggle />
         </header>
 
         <main className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
