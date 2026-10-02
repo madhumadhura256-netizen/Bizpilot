@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import api from "../api";
+import { inr, input, btn, btnOutline, card, th, td, errorBox } from "../components/ui";
 
 const empty = { name: "", price: "", quantity: "" };
 
@@ -7,6 +9,7 @@ export default function Inventory() {
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState(null);
+  const [error, setError] = useState("");
 
   const load = async () => {
     const { data } = await api.get("/products");
@@ -21,16 +24,27 @@ export default function Inventory() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editId) await api.put(`/products/${editId}`, form);
-    else await api.post("/products", form);
-    setForm(empty);
-    setEditId(null);
-    load();
+    setError("");
+    try {
+      if (editId) await api.put(`/products/${editId}`, form);
+      else await api.post("/products", form);
+      setForm(empty);
+      setEditId(null);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not save the product. Try again.");
+    }
   };
 
   const handleEdit = (p) => {
     setEditId(p._id);
     setForm({ name: p.name, price: p.price, quantity: p.quantity });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    setEditId(null);
+    setForm(empty);
   };
 
   const handleDelete = async (id) => {
@@ -40,42 +54,64 @@ export default function Inventory() {
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Inventory</h2>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">Inventory</h2>
+        <p className="text-sm text-slate-500">Add products and keep track of your stock.</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="bg-white p-4 rounded shadow flex gap-2 mb-6">
-        <input name="name" value={form.name} onChange={handleChange} placeholder="Product name" required className="border p-2 rounded flex-1" />
-        <input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Price" required className="border p-2 rounded w-28" />
-        <input name="quantity" type="number" value={form.quantity} onChange={handleChange} placeholder="Qty" required className="border p-2 rounded w-24" />
-        <button className="bg-blue-600 text-white px-4 rounded">{editId ? "Update" : "Add"}</button>
+      <form onSubmit={handleSubmit} className={`${card} space-y-3 p-4 sm:p-5`}>
+        <h3 className="text-sm font-semibold">{editId ? "Edit product" : "Add a product"}</h3>
+        {error && <p className={errorBox}>{error}</p>}
+        <div className="grid gap-3 sm:grid-cols-[1fr_8rem_8rem_auto]">
+          <input name="name" value={form.name} onChange={handleChange} placeholder="Product name" required className={input} />
+          <input name="price" type="number" min="0" value={form.price} onChange={handleChange} placeholder="Price (₹)" required className={input} />
+          <input name="quantity" type="number" min="0" value={form.quantity} onChange={handleChange} placeholder="Quantity" required className={input} />
+          <div className="flex gap-2">
+            <button className={`${btn} flex-1`}>{editId ? "Save changes" : "Add product"}</button>
+            {editId && <button type="button" onClick={cancelEdit} className={btnOutline}>Cancel</button>}
+          </div>
+        </div>
       </form>
 
-      <table className="w-full bg-white rounded shadow text-left">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="p-2">Name</th>
-            <th className="p-2">Price</th>
-            <th className="p-2">Stock</th>
-            <th className="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => (
-            <tr key={p._id} className="border-t">
-              <td className="p-2">{p.name}</td>
-              <td className="p-2">₹{p.price}</td>
-              <td className={`p-2 ${p.quantity <= 5 ? "text-red-600 font-semibold" : ""}`}>{p.quantity}</td>
-              <td className="p-2 space-x-2">
-                <button onClick={() => handleEdit(p)} className="text-blue-600">Edit</button>
-                <button onClick={() => handleDelete(p._id)} className="text-red-600">Delete</button>
-              </td>
+      <div className={`${card} overflow-x-auto`}>
+        <table className="w-full min-w-[480px]">
+          <thead>
+            <tr>
+              <th className={th}>Product</th>
+              <th className={th}>Price</th>
+              <th className={th}>Stock</th>
+              <th className={`${th} text-right`}>Actions</th>
             </tr>
-          ))}
-          {products.length === 0 && (
-            <tr><td colSpan="4" className="p-4 text-center text-gray-500">No products yet</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {products.map((p) => (
+              <tr key={p._id}>
+                <td className={`${td} font-medium text-slate-900`}>{p.name}</td>
+                <td className={td}>{inr(p.price)}</td>
+                <td className={td}>
+                  {p.quantity <= 5 ? (
+                    <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">{p.quantity} left</span>
+                  ) : (
+                    p.quantity
+                  )}
+                </td>
+                <td className={`${td} text-right`}>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => handleEdit(p)} className={btnOutline} aria-label={`Edit ${p.name}`}><Pencil size={14} /> Edit</button>
+                    <button onClick={() => handleDelete(p._id)} className="rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500" aria-label={`Delete ${p.name}`}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {products.length === 0 && (
+              <tr><td colSpan="4" className="px-4 py-10 text-center text-sm text-slate-500">No products yet. Add your first product above.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

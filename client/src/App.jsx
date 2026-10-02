@@ -11,6 +11,7 @@ import Assistant from "./pages/Assistant";   // add with the other imports
 
 
 
+
 const Protected = ({ children }) =>
   localStorage.getItem("token") ? children : <Navigate to="/login" />;
 
