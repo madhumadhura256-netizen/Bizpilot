@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LayoutDashboard, ShoppingCart, Package, Users, Bot, LogOut, Menu, X } from "lucide-react";
-import ThemeToggle from "./ThemeToggle";
+import ThemeToggle from "./Themetoggle";
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
