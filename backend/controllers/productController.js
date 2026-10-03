@@ -7,8 +7,8 @@ export const getProducts = async (req, res) => {
 
 export const addProduct = async (req, res) => {
   try {
-    const { name, price, quantity } = req.body;
-    const product = await Product.create({ user: req.userId, name, price, quantity });
+    const { name, price, quantity, barcode } = req.body;
+    const product = await Product.create({ user: req.userId, name, price, quantity, barcode });
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -28,4 +28,14 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   await Product.findOneAndDelete({ _id: req.params.id, user: req.userId });
   res.json({ message: "Deleted" });
+};
+export const restockByBarcode = async (req, res) => {
+  const qty = Number(req.body.quantity) || 1;
+  const product = await Product.findOneAndUpdate(
+    { barcode: req.params.code, user: req.userId },
+    { $inc: { quantity: qty } },
+    { new: true }
+  );
+  if (!product) return res.status(404).json({ message: "No product with this barcode" });
+  res.json(product);
 };

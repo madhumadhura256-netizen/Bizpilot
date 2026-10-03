@@ -8,6 +8,10 @@ const saleSchema = new mongoose.Schema(
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true },
     total: { type: Number, required: true },
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
+    customerName: { type: String, default: "" },
+    paymentType: { type: String, enum: ["paid", "credit"], default: "paid" },
+    billId: { type: String, default: "" },
   },
   { timestamps: true }
 );

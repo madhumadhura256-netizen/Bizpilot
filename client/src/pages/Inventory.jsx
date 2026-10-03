@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ScanLine } from "lucide-react";
 import api from "../api";
 import { inr, input, btn, btnOutline, card, th, td, errorBox } from "../components/ui";
+import Scanner from "../components/Scanner";
 
-const empty = { name: "", price: "", quantity: "" };
+const empty = { name: "", price: "", quantity: "", barcode: "" };
 
 export default function Inventory() {
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState("");
+  const [scanMode, setScanMode] = useState("");   // "" | "form" | "restock"
+  const [notice, setNotice] = useState("");
 
   const load = async () => {
     const { data } = await api.get("/products");
@@ -38,7 +41,7 @@ export default function Inventory() {
 
   const handleEdit = (p) => {
     setEditId(p._id);
-    setForm({ name: p.name, price: p.price, quantity: p.quantity });
+    setForm({ name: p.name, price: p.price, quantity: p.quantity, barcode: p.barcode || "" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -53,24 +56,60 @@ export default function Inventory() {
     load();
   };
 
+  const handleScan = async (code) => {
+    if (scanMode === "form") {
+      setForm((f) => ({ ...f, barcode: code }));
+      setScanMode("");
+      return;
+    }
+    // restock mode: +1 stock per scan, camera stays open
+    try {
+      const { data } = await api.put(`/products/barcode/${encodeURIComponent(code)}/add`, { quantity: 1 });
+      setNotice(`${data.name}: stock is now ${data.quantity}`);
+      load();
+    } catch (err) {
+      setNotice(err.response?.data?.message || "Scan failed");
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Inventory</h2>
-        <p className="text-sm text-slate-500">Add products and keep track of your stock.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Inventory</h2>
+          <p className="text-sm text-slate-500">Add products and keep track of your stock.</p>
+        </div>
+        <button type="button" onClick={() => { setNotice(""); setScanMode("restock"); }} className={btn}>
+          <ScanLine size={14} /> Scan to restock
+        </button>
       </div>
+
+      {scanMode && (
+        <div>
+          <Scanner onScan={handleScan} onClose={() => setScanMode("")} />
+          {scanMode === "restock" && notice && (
+            <p className="-mt-2 mb-2 text-sm font-medium text-emerald-700">{notice}</p>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className={`${card} space-y-3 p-4 sm:p-5`}>
         <h3 className="text-sm font-semibold">{editId ? "Edit product" : "Add a product"}</h3>
         {error && <p className={errorBox}>{error}</p>}
-        <div className="grid gap-3 sm:grid-cols-[1fr_8rem_8rem_auto]">
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_8rem_8rem]">
           <input name="name" value={form.name} onChange={handleChange} placeholder="Product name" required className={input} />
           <input name="price" type="number" min="0" value={form.price} onChange={handleChange} placeholder="Price (₹)" required className={input} />
           <input name="quantity" type="number" min="0" value={form.quantity} onChange={handleChange} placeholder="Quantity" required className={input} />
-          <div className="flex gap-2">
-            <button className={`${btn} flex-1`}>{editId ? "Save changes" : "Add product"}</button>
-            {editId && <button type="button" onClick={cancelEdit} className={btnOutline}>Cancel</button>}
-          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="Barcode (optional)" className={`${input} flex-1 min-w-[10rem]`} />
+          <button type="button" onClick={() => setScanMode("form")} className={btnOutline}>
+            <ScanLine size={14} /> Scan barcode
+          </button>
+          <button className={btn}>{editId ? "Save changes" : "Add product"}</button>
+          {editId && <button type="button" onClick={cancelEdit} className={btnOutline}>Cancel</button>}
         </div>
       </form>
 
@@ -79,6 +118,7 @@ export default function Inventory() {
           <thead>
             <tr>
               <th className={th}>Product</th>
+              <th className={th}>Barcode</th>
               <th className={th}>Price</th>
               <th className={th}>Stock</th>
               <th className={`${th} text-right`}>Actions</th>
@@ -88,6 +128,7 @@ export default function Inventory() {
             {products.map((p) => (
               <tr key={p._id}>
                 <td className={`${td} font-medium text-slate-900`}>{p.name}</td>
+                <td className={td}>{p.barcode || "-"}</td>
                 <td className={td}>{inr(p.price)}</td>
                 <td className={td}>
                   {p.quantity <= 5 ? (
@@ -107,7 +148,7 @@ export default function Inventory() {
               </tr>
             ))}
             {products.length === 0 && (
-              <tr><td colSpan="4" className="px-4 py-10 text-center text-sm text-slate-500">No products yet. Add your first product above.</td></tr>
+              <tr><td colSpan="5" className="px-4 py-10 text-center text-sm text-slate-500">No products yet. Add your first product above.</td></tr>
             )}
           </tbody>
         </table>

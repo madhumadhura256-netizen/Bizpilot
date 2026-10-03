@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
+import SalesChart from "../components/SalesChart";
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -57,6 +58,8 @@ export default function Dashboard() {
         <Stat label="Total due" value={inr(data.totalDue)} tone="text-red-600" />
         <Stat label="Products" value={data.totalProducts} />
       </div>
+
+      <SalesChart />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Panel title="Low stock (5 or fewer)">
