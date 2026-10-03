@@ -8,6 +8,7 @@ import saleRoutes from "./routes/saleRoutes.js";   // with the other imports
 import customerRoutes from "./routes/customerRoutes.js";   // with the other imports
 import dashboardRoutes from "./routes/dashboardRoutes.js";   // with the other imports
 import assistantRoutes from "./routes/assistantRoutes.js";   // with the other imports
+import expenseRoutes from "./routes/expenseRoutes.js";   // with the other imports
 
 
 
@@ -24,6 +25,7 @@ app.use("/api/sales", saleRoutes);                  // below the products line
 app.use("/api/customers", customerRoutes);                  // below the sales line
 app.use("/api/dashboard", dashboardRoutes);                   // below the customers line
 app.use("/api/assistant", assistantRoutes);                   // below the dashboard line
+app.use("/api/expenses", expenseRoutes);                  // with the other app.use lines
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

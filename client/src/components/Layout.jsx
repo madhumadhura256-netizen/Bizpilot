@@ -1,19 +1,23 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShoppingCart, Package, Users, Bot, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Users, Receipt, Bot, LogOut, Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useLang } from "../i18n";
 
 const links = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/sales", label: "Sales", icon: ShoppingCart },
-  { to: "/inventory", label: "Inventory", icon: Package },
-  { to: "/customers", label: "Customers", icon: Users },
-  { to: "/assistant", label: "Assistant", icon: Bot },
+  { to: "/", key: "dashboard", icon: LayoutDashboard, end: true },
+  { to: "/sales", key: "sales", icon: ShoppingCart },
+  { to: "/inventory", key: "inventory", icon: Package },
+  { to: "/customers", key: "customers", icon: Users },
+  { to: "/expenses", key: "expenses", icon: Receipt },
+  { to: "/assistant", key: "assistant", icon: Bot },
 ];
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLang();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const logout = () => {
@@ -30,7 +34,7 @@ export default function Layout() {
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {links.map(({ to, label, icon: Icon, end }) => (
+        {links.map(({ to, key, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -42,7 +46,7 @@ export default function Layout() {
               }`
             }
           >
-            <Icon size={18} /> {label}
+            <Icon size={18} /> {t(key)}
           </NavLink>
         ))}
       </nav>
@@ -51,12 +55,16 @@ export default function Layout() {
         <p className="truncate text-sm font-medium text-white">{user.name}</p>
         <p className="truncate text-xs text-slate-400">{user.email}</p>
 
+        <div className="mt-3">
+          <LanguageSwitcher />
+        </div>
+
         <div className="mt-3 flex items-center gap-2">
           <button
             onClick={logout}
             className="flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
           >
-            <LogOut size={16} /> Log out
+            <LogOut size={16} /> {t("logout")}
           </button>
 
           <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-md text-slate-300 hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400" />

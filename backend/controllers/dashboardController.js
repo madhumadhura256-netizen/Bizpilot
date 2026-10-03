@@ -2,7 +2,7 @@ import Sale from "../models/Sale.js";
 import Product from "../models/Product.js";
 import Customer from "../models/Customer.js";
 import mongoose from "mongoose";
-
+import Expense from "../models/Expense.js";
 export const getDashboard = async (req, res) => {
   try {
     const user = req.userId;
@@ -37,8 +37,7 @@ export const getTrend = async (req, res) => {
     const format = { day: "%Y-%m-%d", month: "%Y-%m", year: "%Y" }[period];
     const count = { day: 30, month: 12, year: 5 }[period];
 
-    // Build every bucket (so days with no sales show as 0), using India time
-    const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: tz }); // YYYY-MM-DD
+    const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: tz });
     const [y, m] = todayStr.split("-").map(Number);
     const base = new Date(todayStr + "T00:00:00Z");
 
@@ -57,19 +56,41 @@ export const getTrend = async (req, res) => {
 
     const startStr = { day: keys[0], month: keys[0] + "-01", year: keys[0] + "-01-01" }[period];
     const start = new Date(startStr + "T00:00:00+05:30");
+    const userId = new mongoose.Types.ObjectId(req.userId);
 
-    const rows = await Sale.aggregate([
-      { $match: { user: new mongoose.Types.ObjectId(req.userId), createdAt: { $gte: start } } },
-      {
-        $group: {
-          _id: { $dateToString: { format, date: "$createdAt", timezone: tz } },
-          total: { $sum: "$total" },
+    const [saleRows, expenseRows] = await Promise.all([
+      Sale.aggregate([
+        { $match: { user: userId, createdAt: { $gte: start } } },
+        {
+          $group: {
+            _id: { $dateToString: { format, date: "$createdAt", timezone: tz } },
+            sales: { $sum: "$total" },
+            cost: { $sum: { $multiply: [{ $ifNull: ["$cost", 0] }, "$quantity"] } },
+          },
         },
-      },
+      ]),
+      Expense.aggregate([
+        { $match: { user: userId, date: { $gte: start } } },
+        {
+          $group: {
+            _id: { $dateToString: { format, date: "$date", timezone: tz } },
+            expenses: { $sum: "$amount" },
+          },
+        },
+      ]),
     ]);
 
-    const totals = Object.fromEntries(rows.map((r) => [r._id, r.total]));
-    res.json(keys.map((key) => ({ key, total: totals[key] || 0 })));
+    const s = Object.fromEntries(saleRows.map((r) => [r._id, r]));
+    const e = Object.fromEntries(expenseRows.map((r) => [r._id, r.expenses]));
+
+    res.json(
+      keys.map((key) => {
+        const sales = s[key]?.sales || 0;
+        const cost = s[key]?.cost || 0;
+        const expenses = e[key] || 0;
+        return { key, sales, expenses, profit: sales - cost - expenses };
+      })
+    );
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

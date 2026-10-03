@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../api";
 import SalesChart from "../components/SalesChart";
+import { useLang } from "../i18n";
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -32,48 +33,49 @@ const Skeleton = () => (
 );
 
 export default function Dashboard() {
+  const { t } = useLang();
   const [data, setData] = useState(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
     api.get("/dashboard")
       .then((res) => setData(res.data))
-      .catch(() => setError("Could not load the dashboard. Refresh to try again."));
+      .catch(() => setError(true));
   }, []);
 
-  if (error) return <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>;
+  if (error) return <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{t("loadError")}</p>;
   if (!data) return <Skeleton />;
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Welcome, {user.name}</h2>
-        <p className="text-sm text-slate-500">Here is how your business is doing.</p>
+        <h2 className="text-2xl font-semibold tracking-tight">{t("welcome")}, {user.name}</h2>
+        <p className="text-sm text-slate-500">{t("dashSub")}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Today's sales" value={inr(data.todaySales)} tone="text-teal-700" />
-        <Stat label="Total sales" value={inr(data.totalSales)} />
-        <Stat label="Total due" value={inr(data.totalDue)} tone="text-red-600" />
-        <Stat label="Products" value={data.totalProducts} />
+        <Stat label={t("todaySales")} value={inr(data.todaySales)} tone="text-teal-700" />
+        <Stat label={t("totalSales")} value={inr(data.totalSales)} />
+        <Stat label={t("totalDue")} value={inr(data.totalDue)} tone="text-red-600" />
+        <Stat label={t("products")} value={data.totalProducts} />
       </div>
 
       <SalesChart />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Panel title="Low stock (5 or fewer)">
-          {data.lowStock.length === 0 && <p className="py-4 text-sm text-slate-500">Every product is well stocked.</p>}
+        <Panel title={t("lowStock")}>
+          {data.lowStock.length === 0 && <p className="py-4 text-sm text-slate-500">{t("wellStocked")}</p>}
           {data.lowStock.map((p) => (
             <div key={p._id} className="flex items-center justify-between border-b border-slate-100 py-3 text-sm last:border-0">
               <span className="text-slate-700">{p.name}</span>
-              <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">{p.quantity} left</span>
+              <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">{p.quantity} {t("left")}</span>
             </div>
           ))}
         </Panel>
 
-        <Panel title="Recent sales">
-          {data.recentSales.length === 0 && <p className="py-4 text-sm text-slate-500">No sales yet. Record your first sale to see it here.</p>}
+        <Panel title={t("recentSales")}>
+          {data.recentSales.length === 0 && <p className="py-4 text-sm text-slate-500">{t("noSalesYet")}</p>}
           {data.recentSales.map((s) => (
             <div key={s._id} className="flex items-center justify-between border-b border-slate-100 py-3 text-sm last:border-0">
               <span className="text-slate-700">{s.productName} <span className="text-slate-400">× {s.quantity}</span></span>

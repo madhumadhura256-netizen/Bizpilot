@@ -12,6 +12,7 @@ const saleSchema = new mongoose.Schema(
     customerName: { type: String, default: "" },
     paymentType: { type: String, enum: ["paid", "credit"], default: "paid" },
     billId: { type: String, default: "" },
+    cost: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

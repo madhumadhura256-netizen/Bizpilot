@@ -2,13 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, SendHorizontal, Trash2, User, Package, Wallet, TrendingUp, AlertTriangle } from "lucide-react";
 import api from "../api";
 import { input, btn, btnOutline, card } from "../components/ui";
-
-const suggestions = [
-  { icon: AlertTriangle, title: "Low stock", text: "Which products have stock of 5 or less?" },
-  { icon: Wallet, title: "Pending dues", text: "Who owes me the most money?" },
-  { icon: TrendingUp, title: "Best sellers", text: "Which product sells the most?" },
-  { icon: Package, title: "Sales summary", text: "Give me a summary of my sales." },
-];
+import { useLang } from "../i18n";
 
 // Turns **bold** and "- item" lines from the AI into clean formatting
 function Formatted({ text }) {
@@ -40,10 +34,18 @@ function Formatted({ text }) {
 }
 
 export default function Assistant() {
+  const { t, langName } = useLang();
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+
+  const suggestions = [
+    { icon: AlertTriangle, title: t("sugLowT"), text: t("sugLowQ") },
+    { icon: Wallet, title: t("sugDueT"), text: t("sugDueQ") },
+    { icon: TrendingUp, title: t("sugBestT"), text: t("sugBestQ") },
+    { icon: Package, title: t("sugSumT"), text: t("sugSumQ") },
+  ];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,12 +57,12 @@ export default function Assistant() {
     setQuestion("");
     setLoading(true);
     try {
-      const { data } = await api.post("/assistant", { question: q });
+      const { data } = await api.post("/assistant", { question: q, language: langName });
       setMessages((m) => [...m, { role: "ai", text: data.answer }]);
     } catch (err) {
       setMessages((m) => [
         ...m,
-        { role: "ai", error: true, text: err.response?.data?.message || "Something went wrong. Please try again." },
+        { role: "ai", error: true, text: err.response?.data?.message || t("genericError") },
       ]);
     }
     setLoading(false);
@@ -75,7 +77,6 @@ export default function Assistant() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl flex-col">
-      {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow">
@@ -84,26 +85,25 @@ export default function Assistant() {
           <div>
             <h2 className="text-xl font-semibold tracking-tight">BizPilot AI</h2>
             <p className="flex items-center gap-1.5 text-xs text-slate-500">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" /> Online · Answers from your business data
+              <span className="h-2 w-2 rounded-full bg-emerald-500" /> {t("aiSub")}
             </p>
           </div>
         </div>
         {messages.length > 0 && (
           <button type="button" onClick={() => setMessages([])} className={btnOutline}>
-            <Trash2 size={14} /> Clear chat
+            <Trash2 size={14} /> {t("clearChat")}
           </button>
         )}
       </div>
 
-      {/* Chat area */}
       <div className={`${card} flex-1 space-y-5 overflow-y-auto p-4 sm:p-6`}>
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg">
               <Sparkles size={26} />
             </div>
-            <h3 className="text-lg font-semibold">How can I help your business today?</h3>
-            <p className="mb-6 mt-1 text-sm text-slate-500">Ask about sales, stock, customers, or dues.</p>
+            <h3 className="text-lg font-semibold">{t("helpTitle")}</h3>
+            <p className="mb-6 mt-1 text-sm text-slate-500">{t("helpSub")}</p>
             <div className="grid w-full max-w-xl gap-3 sm:grid-cols-2">
               {suggestions.map(({ icon: Icon, title, text }) => (
                 <button
@@ -159,7 +159,6 @@ export default function Assistant() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -171,11 +170,11 @@ export default function Assistant() {
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about sales, stock, or dues..."
+          placeholder={t("placeholder")}
           className={`${input} flex-1`}
         />
-        <button className={btn} disabled={loading || !question.trim()} aria-label="Send">
-          <SendHorizontal size={16} /> Send
+        <button className={btn} disabled={loading || !question.trim()} aria-label={t("send")}>
+          <SendHorizontal size={16} /> {t("send")}
         </button>
       </form>
     </div>

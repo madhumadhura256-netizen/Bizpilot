@@ -4,7 +4,7 @@ import Customer from "../models/Customer.js";
 
 export const askAssistant = async (req, res) => {
   try {
-    const { question } = req.body;
+    const { question, language } = req.body;
     if (!question) return res.status(400).json({ message: "Enter a question" });
 
     const user = req.userId;
@@ -43,7 +43,8 @@ export const askAssistant = async (req, res) => {
       "Answer using only the business data provided. Currency is Indian rupees (₹). " +
       "Low stock means 5 or fewer units. " +
       "Keep answers short and simple. Use short bullet points starting with '- ' for lists. " +
-      "If the data is not enough, say so.";
+      "If the data is not enough, say so. " +
+      "Reply in " + (language || "English") + ".";
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",

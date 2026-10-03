@@ -7,14 +7,13 @@ export const getProducts = async (req, res) => {
 
 export const addProduct = async (req, res) => {
   try {
-    const { name, price, quantity, barcode } = req.body;
-    const product = await Product.create({ user: req.userId, name, price, quantity, barcode });
+    const { name, price, quantity, barcode, costPrice } = req.body;
+    const product = await Product.create({ user: req.userId, name, price, quantity, barcode, costPrice });
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
-
 export const updateProduct = async (req, res) => {
   const product = await Product.findOneAndUpdate(
     { _id: req.params.id, user: req.userId },
